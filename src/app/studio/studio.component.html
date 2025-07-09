@@ -1,0 +1,311 @@
+<div class="studio-container">
+  <!-- Header -->
+  <div class="studio-header">
+    <div class="header-left">
+      <h1 class="studio-title">
+        <i class="fas fa-film"></i>
+        Video Studio Pro
+      </h1>
+      <div class="project-info">
+        <span class="project-name">{{ currentProject?.title || 'Untitled Project' }}</span>
+        <button class="btn btn-link btn-sm" (click)="newProject()">
+          <i class="fas fa-plus"></i> New
+        </button>
+      </div>
+    </div>
+    
+    <div class="header-right">
+      <div class="playback-controls">
+        <button 
+          class="btn btn-icon"
+          [class.active]="isPlaying"
+          (click)="togglePlayPause()"
+          [title]="isPlaying ? 'Pause' : 'Play'">
+          <i class="fas" [ngClass]="isPlaying ? 'fa-pause' : 'fa-play'"></i>
+        </button>
+        <button class="btn btn-icon" (click)="stop()" title="Stop">
+          <i class="fas fa-stop"></i>
+        </button>
+      </div>
+      
+      <div class="header-actions">
+        <button class="btn btn-outline" (click)="saveProject()">
+          <i class="fas fa-save"></i> Save
+        </button>
+        <button class="btn btn-primary" (click)="showExportDialog = true">
+          <i class="fas fa-download"></i> Export
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toolbar -->
+  <div class="studio-toolbar">
+    <div class="toolbar-section">
+      <div class="section-title">Edit</div>
+      <div class="toolbar-buttons">
+        <button 
+          class="btn btn-icon"
+          [disabled]="!canUndo"
+          (click)="undo()"
+          title="Undo (Ctrl+Z)">
+          <i class="fas fa-undo"></i>
+        </button>
+        <button 
+          class="btn btn-icon"
+          [disabled]="!canRedo"
+          (click)="redo()"
+          title="Redo (Ctrl+Y)">
+          <i class="fas fa-redo"></i>
+        </button>
+        <button 
+          class="btn btn-icon"
+          [disabled]="!selectedClipId"
+          (click)="cutClip()"
+          title="Cut (Ctrl+X)">
+          <i class="fas fa-cut"></i>
+        </button>
+        <button 
+          class="btn btn-icon"
+          [disabled]="!selectedClipId"
+          (click)="copyClip()"
+          title="Copy (Ctrl+C)">
+          <i class="fas fa-copy"></i>
+        </button>
+        <button 
+          class="btn btn-icon"
+          [disabled]="!selectedClipId"
+          (click)="deleteClip()"
+          title="Delete (Del)">
+          <i class="fas fa-trash"></i>
+        </button>
+      </div>
+    </div>
+
+    <div class="toolbar-section">
+      <div class="section-title">Tools</div>
+      <div class="toolbar-buttons">
+        <button 
+          class="btn btn-icon"
+          [disabled]="!selectedClipId"
+          (click)="splitClip()"
+          title="Split (S)">
+          <i class="fas fa-scissors"></i>
+        </button>
+        <button class="btn btn-icon" (click)="addTextOverlay()" title="Add Text (T)">
+          <i class="fas fa-font"></i>
+        </button>
+        <button class="btn btn-icon" (click)="openEffectsPanel()" title="Effects (E)">
+          <i class="fas fa-magic"></i>
+        </button>
+        <button class="btn btn-icon" (click)="openTransitionsPanel()" title="Transitions">
+          <i class="fas fa-exchange-alt"></i>
+        </button>
+      </div>
+    </div>
+
+    <div class="toolbar-section">
+      <div class="section-title">View</div>
+      <div class="toolbar-buttons">
+        <button class="btn btn-icon" (click)="zoomOut()" title="Zoom Out">
+          <i class="fas fa-search-minus"></i>
+        </button>
+        <span class="zoom-display">{{ (zoom * 100) | number:'1.0-0' }}%</span>
+        <button class="btn btn-icon" (click)="zoomIn()" title="Zoom In">
+          <i class="fas fa-search-plus"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="studio-content">
+    <!-- Left Sidebar - Media Library -->
+    <div class="sidebar-left">
+      <app-media-library
+        [mediaItems]="mediaItems"
+        [currentProjectId]="currentProject?.id || ''"
+        (mediaSelected)="onMediaSelected($event)"
+        (mediaDeleted)="onMediaDeleted($event)"
+        (mediaUploaded)="onMediaUploaded($event)">
+      </app-media-library>
+    </div>
+
+    <!-- Center - Video Preview and Timeline -->
+    <div class="main-area">
+      <!-- Video Preview -->
+      <div class="preview-section">
+        <app-video-preview
+          [clips]="clips"
+          [currentTime]="currentTime"
+          [duration]="duration"
+          [isPlaying]="isPlaying"
+          [volume]="volume"
+          (playToggle)="togglePlayPause()"
+          (seek)="onSeek($event)"
+          (volumeChange)="onVolumeChange($event)"
+          (fullscreen)="toggleFullscreen()">
+        </app-video-preview>
+      </div>
+
+      <!-- Timeline -->
+      <div class="timeline-section">
+        <app-video-timeline
+          [clips]="clips"
+          [tracks]="tracks"
+          [duration]="duration"
+          [currentTime]="currentTime"
+          [zoom]="zoom"
+          [selectedClipId]="selectedClipId"
+          (clipSelected)="onClipSelected($event)"
+          (clipUpdated)="onClipUpdated($event)"
+          (clipDeleted)="onClipDeleted($event)"
+          (clipSplit)="onClipSplit($event)"
+          (trackAdded)="onTrackAdded($event)"
+          (trackUpdated)="onTrackUpdated($event)"
+          (trackDeleted)="onTrackDeleted($event)"
+          (timelineSeek)="onSeek($event)"
+          (zoomChanged)="onZoomChanged($event)">
+        </app-video-timeline>
+      </div>
+    </div>
+
+    <!-- Right Sidebar - Effects Panel -->
+    <div class="sidebar-right" *ngIf="showEffectsPanel">
+      <app-effects-panel
+        [selectedClip]="getSelectedClip()"
+        (effectApplied)="onEffectApplied($event)"
+        (effectRemoved)="onEffectRemoved($event)">
+      </app-effects-panel>
+    </div>
+  </div>
+</div>
+
+<!-- Export Dialog -->
+<div *ngIf="showExportDialog" class="modal-overlay" (click)="showExportDialog = false">
+  <div class="export-modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>
+        <i class="fas fa-download"></i>
+        Export Video
+      </h3>
+      <button class="btn btn-icon" (click)="showExportDialog = false">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <div class="modal-body" *ngIf="!isExporting">
+      <div class="export-settings">
+        <div class="setting-group">
+          <label>Format</label>
+          <select [(ngModel)]="exportSettings.format" class="form-control">
+            <option value="mp4">MP4 (Recommended)</option>
+            <option value="mov">MOV</option>
+            <option value="avi">AVI</option>
+          </select>
+        </div>
+
+        <div class="setting-group">
+          <label>Quality</label>
+          <select [(ngModel)]="exportSettings.quality" class="form-control">
+            <option value="low">Low (1 Mbps)</option>
+            <option value="medium">Medium (5 Mbps)</option>
+            <option value="high">High (10 Mbps)</option>
+            <option value="ultra">Ultra (20 Mbps)</option>
+          </select>
+        </div>
+
+        <div class="setting-group">
+          <label>Resolution</label>
+          <select [(ngModel)]="exportSettings.resolution" class="form-control">
+            <option value="720p">720p HD (1280 × 720)</option>
+            <option value="1080p">1080p Full HD (1920 × 1080)</option>
+            <option value="4k">4K Ultra HD (3840 × 2160)</option>
+          </select>
+        </div>
+
+        <div class="setting-group">
+          <label>Frame Rate</label>
+          <div class="fps-options">
+            <button 
+              *ngFor="let fps of [24, 30, 60]"
+              class="btn"
+              [class.btn-primary]="exportSettings.fps === fps"
+              [class.btn-outline]="exportSettings.fps !== fps"
+              (click)="exportSettings.fps = fps">
+              {{ fps }} fps
+            </button>
+          </div>
+        </div>
+
+        <div class="export-summary">
+          <div class="summary-item">
+            <span class="label">Estimated Size:</span>
+            <span class="value">{{ getEstimatedFileSize() }}</span>
+          </div>
+          <div class="summary-item">
+            <span class="label">Processing Time:</span>
+            <span class="value">{{ getEstimatedTime() }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-body" *ngIf="isExporting">
+      <div class="export-progress">
+        <div class="progress-icon">
+          <i class="fas fa-download fa-spin"></i>
+        </div>
+        <h4>Exporting Video...</h4>
+        <p>Processing your video with {{ exportSettings.quality }} quality at {{ exportSettings.resolution }}</p>
+        <div class="progress-bar">
+          <div class="progress-fill" [style.width.%]="exportProgress"></div>
+        </div>
+        <div class="progress-text">{{ exportProgress | number:'1.0-0' }}%</div>
+      </div>
+    </div>
+
+    <div class="modal-footer" *ngIf="!isExporting">
+      <button class="btn btn-outline" (click)="showExportDialog = false">Cancel</button>
+      <button class="btn btn-primary" (click)="exportProject()">
+        <i class="fas fa-download"></i>
+        Export Video
+      </button>
+    </div>
+
+    <div class="modal-footer" *ngIf="isExporting">
+      <button class="btn btn-outline" (click)="cancelExport()">Cancel Export</button>
+    </div>
+  </div>
+</div>
+
+<!-- Text Overlay Dialog -->
+<div *ngIf="showTextDialog" class="modal-overlay" (click)="showTextDialog = false">
+  <div class="text-modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Add Text Overlay</h3>
+      <button class="btn btn-icon" (click)="showTextDialog = false">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Text</label>
+        <input type="text" [(ngModel)]="textOverlay.text" class="form-control" placeholder="Enter text...">
+      </div>
+      <div class="form-group">
+        <label>Font Size</label>
+        <input type="range" [(ngModel)]="textOverlay.fontSize" min="12" max="72" class="form-control">
+        <span>{{ textOverlay.fontSize }}px</span>
+      </div>
+      <div class="form-group">
+        <label>Color</label>
+        <input type="color" [(ngModel)]="textOverlay.color" class="form-control">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" (click)="showTextDialog = false">Cancel</button>
+      <button class="btn btn-primary" (click)="applyTextOverlay()">Add Text</button>
+    </div>
+  </div>
+</div>

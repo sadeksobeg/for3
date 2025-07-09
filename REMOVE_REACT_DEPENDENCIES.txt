@@ -1,0 +1,10 @@
+To make your project Angular-only, remove these dependencies from package.json if present:
+
+- react
+- react-dom
+- @vitejs/plugin-react
+- @types/react
+- @types/react-dom
+- vite
+
+Then run `npm install` to clean up your node_modules.

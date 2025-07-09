@@ -1,0 +1,18 @@
+Remove the following files and folders to make this project Angular-only:
+
+- vite.config.ts
+- src/main.tsx
+- src/App.tsx
+- src/components/ (all .tsx files)
+- src/hooks/useKeyboardShortcuts.ts
+- src/index.css
+- src/components/ui/ (all .tsx files)
+- src/components/Toolbar.tsx
+- src/components/TimelineClip.tsx
+- src/components/Timeline.tsx
+- src/components/MediaLibrary.tsx
+- src/components/ExportDialog.tsx
+
+You may also want to remove any React-specific dependencies from package.json (such as react, react-dom, @vitejs/*, etc.).
+
+After removing these, your project will be Angular-only.
